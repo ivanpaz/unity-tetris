@@ -18,22 +18,14 @@ public class Tetromino : MonoBehaviour
         get { return isMoving; }
     }
 
-    private bool canMoveRight = true;
-    public bool CanMoveRight
-    {
-        get { return canMoveRight; }
-        set { canMoveRight = value; }
-    }
-    private bool canMoveLeft = true;
-    public bool CanMoveLeft
-    {
-        get { return canMoveLeft; }
-        set { canMoveLeft = value; }
-    }
+   
+
+    Peace[] peacesChilds;
 
     // Start is called before the first frame update
     void Start()
     {
+        peacesChilds = GetComponentsInChildren<Peace>();
         PrepareChilds(true);
         StartCoroutine(GameLoop());
     }
@@ -44,17 +36,21 @@ public class Tetromino : MonoBehaviour
         yield return new WaitForSeconds(speed);
         if (isMoving)
         {
-            Movement("down");
-            StartCoroutine(GameLoop());
+            if (CanGoDir("down"))
+            {
+                Movement("down");
+                StartCoroutine(GameLoop());
+            }
+            else
+            {
+                StopMotion();
+            }
+            
         }
 
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+   
    
     void PrepareChilds(bool partOfTetromino)
     {        
@@ -69,7 +65,7 @@ public class Tetromino : MonoBehaviour
     public void StopMotion()
     {
         isMoving = false;
-        PrepareChilds(false);
+        
         StartCoroutine(StopMoving());
     }
 
@@ -77,7 +73,7 @@ public class Tetromino : MonoBehaviour
     {
 
         yield return new WaitForSeconds(0.5f);
-        
+        PrepareChilds(false);
         GameController.Instance.NewCycle();
         transform.DetachChildren();
 
@@ -93,27 +89,67 @@ public class Tetromino : MonoBehaviour
         Movement(command);        
     }
 
+    bool CanGoDir(string dir)
+    {
+        int canMove = 0;
+
+        foreach (Peace peaceChild in peacesChilds)
+        {
+
+            switch (dir)
+            {
+                case "down":
+                    canMove += peaceChild.CheckPlaceDown();
+                    break;
+
+                case "left":
+                    canMove += peaceChild.CheckPlaceLeft();
+                    break;
+
+                case "right":
+                    canMove += peaceChild.CheckPlaceRight();
+                    break;
+
+               
+                default:
+                    Debug.Log("Wrong");
+                    break;
+            }            
+        }
+
+        if (canMove>0)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     public void Movement(string command)
     {
         switch (command)
         {
             case "down":
-                transform.position += Vector3.down;
+                if (CanGoDir(command))
+                {
+                    transform.position += Vector3.down;
+                }
+                
                 break;
 
-            case "left":
-                if (CanMoveLeft)
+            case "left":               
+                if (CanGoDir(command))
                 {
-                    canMoveRight = true;
+                    //canMoveRight = true;
                     transform.position += Vector3.left;
                 }
                 
                 break;
 
             case "right":
-                if (CanMoveRight)
+                if (CanGoDir(command))
                 {
-                    canMoveLeft = true;
+                    //canMoveLeft = true;
                     transform.position += Vector3.right;
                 }
                 

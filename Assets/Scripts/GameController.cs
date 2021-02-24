@@ -27,12 +27,14 @@ public class GameController : MonoBehaviour
         if(Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            //DontDestroyOnLoad(gameObject);
         }
         else
         {
             Destroy(gameObject);
         }
+        
+        
     }
 
     float speedDificulty = 1f;
@@ -46,7 +48,7 @@ public class GameController : MonoBehaviour
 
     
     float delayInputTime = 0.1f;
-    float inputTime = 0f;
+    float inputTime;
 
     [SerializeField]
     int stageBottomY;
@@ -63,12 +65,19 @@ public class GameController : MonoBehaviour
     AudioSource musicTheme;
 
 
-    void Start()
+
+       
+
+
+    public void StartGame()
     {
+        StartNewCycle();
         musicTheme = GetComponent<AudioSource>();
-        CreateNewTetromino();
-        ChangeScore();
+        musicTheme.Play();        
+        ChangeScore();        
     }
+
+    
 
     // Update is called once per frame
     void Update()
@@ -98,13 +107,12 @@ public class GameController : MonoBehaviour
 
     void StartNewCycle()
     {
-        Debug.Log(IsGameOver());
         if (IsGameOver())
         {
             StartCoroutine(GameOver());
         }
         else
-        {
+        {            
             CreateNewTetromino();
         }
     }
@@ -112,7 +120,7 @@ public class GameController : MonoBehaviour
     bool IsGameOver()
     {
         RaycastHit hit;
-        if (Physics.Raycast(transform.position, Vector3.down, out hit,  1))
+        if (Physics.Raycast(transform.position, Vector3.down, out hit,  0.5f))
         {
             if (hit.transform.gameObject.GetComponent<Peace>().IsTetrominoPart != true) {
                 return true;
@@ -128,6 +136,8 @@ public class GameController : MonoBehaviour
         tetrominoInControll = Instantiate(tetrominos[newPeace],transform.position, Quaternion.identity).GetComponent<Tetromino>();
         tetrominoInControll.Speed = speedDificulty;
     }
+
+    
 
     void ClearTetromino()
     {
@@ -164,6 +174,7 @@ public class GameController : MonoBehaviour
 
     void ControllPeace()
     {
+       
         inputTime += Time.deltaTime;
 
         if (inputTime > delayInputTime && tetrominoInControll != null)
@@ -189,7 +200,7 @@ public class GameController : MonoBehaviour
 
             if (Input.GetKey(KeyCode.DownArrow) && tetrominoInControll.IsMoving)
             {
-                inputTime = 0f;
+                inputTime = 0.05f;
                 tetrominoInControll.Controlls("down");
             }
         }
@@ -272,9 +283,7 @@ public class GameController : MonoBehaviour
             default:
                 Debug.Log("Wrong Step");
                 break;
-        }
-        
-        
+        }       
 
     }
 

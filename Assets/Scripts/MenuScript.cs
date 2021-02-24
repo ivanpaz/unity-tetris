@@ -15,7 +15,7 @@ public class MenuScript : MonoBehaviour
     void Update()
     {
         if (Input.anyKey)
-        {
+        {           
             SceneManager.LoadScene("Game");
         }
     }
