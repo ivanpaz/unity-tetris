@@ -4,8 +4,20 @@ using UnityEngine;
 
 public class Tetromino : MonoBehaviour
 {
+    float speed;
+    public float Speed
+    {
+        get { return speed; }
+        set { speed = value; }
+    }
+
     Peace[] peaces;
     private bool isMoving = true;
+    public bool IsMoving
+    {
+        get { return isMoving; }
+    }
+
     private bool canMoveRight = true;
     public bool CanMoveRight
     {
@@ -29,7 +41,7 @@ public class Tetromino : MonoBehaviour
     IEnumerator GameLoop()
     {
 
-        yield return new WaitForSeconds(1);
+        yield return new WaitForSeconds(speed);
         if (isMoving)
         {
             Movement("down");
@@ -58,21 +70,27 @@ public class Tetromino : MonoBehaviour
     {
         isMoving = false;
         PrepareChilds(false);
+        StartCoroutine(StopMoving());
+    }
+
+    IEnumerator StopMoving()
+    {
+
+        yield return new WaitForSeconds(0.5f);
+        
         GameController.Instance.NewCycle();
         transform.DetachChildren();
 
         //Verificar pontos
         Destroy(gameObject);
-        
 
     }
 
-    
+
 
     public void Controlls(string command)
     {
-        Movement(command);
-        
+        Movement(command);        
     }
 
     public void Movement(string command)

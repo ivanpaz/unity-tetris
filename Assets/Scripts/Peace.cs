@@ -53,7 +53,6 @@ public class Peace : MonoBehaviour
         {
             if (isTetrominoPart && placeDown.transform.gameObject.GetComponent<Peace>().isTetrominoPart != true)
             {
-                Debug.Log("Tem coisa");
                 GetComponentInParent<Tetromino>().StopMotion();               
             }           
         }
@@ -66,7 +65,6 @@ public class Peace : MonoBehaviour
         {
             if (isTetrominoPart && placeDown.transform.gameObject.GetComponent<Peace>().isTetrominoPart != true)
             {
-                Debug.Log("Tem coisa");
                 GetComponentInParent<Tetromino>().CanMoveRight = false;
             }
         }
@@ -76,9 +74,8 @@ public class Peace : MonoBehaviour
         RaycastHit placeDown;
         if (Physics.Raycast(transform.position, -Vector3.right, out placeDown, 1))
         {
-            if (isTetrominoPart && placeDown.transform.gameObject.GetComponent<Peace>().isTetrominoPart != true)
+            if (isTetrominoPart && placeDown.transform.gameObject.GetComponent<Peace>().IsTetrominoPart != true)
             {
-                Debug.Log("Tem coisa");
                 GetComponentInParent<Tetromino>().CanMoveLeft = false;
             }
         }

@@ -1,12 +1,26 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+
+using UnityEngine.SceneManagement;
 
 public class GameController : MonoBehaviour
 {
 
     public static GameController Instance { get; private set; }
-     
+
+    private int score;
+    public int Score
+    {
+        get { return score;  }
+        set { score = value; }
+    }
+
+    [SerializeField]
+    Text textScore;
+
+    int pointInLine = 100;
 
     private void Awake()
     {
@@ -20,6 +34,10 @@ public class GameController : MonoBehaviour
             Destroy(gameObject);
         }
     }
+
+    float speedDificulty = 1f;
+
+    
 
 
     Tetromino tetrominoInControll;
@@ -42,23 +60,35 @@ public class GameController : MonoBehaviour
 
     List<int> linesToClean = new List<int>();
 
+    AudioSource musicTheme;
+
 
     void Start()
     {
+        musicTheme = GetComponent<AudioSource>();
         CreateNewTetromino();
-        
+        ChangeScore();
     }
 
     // Update is called once per frame
     void Update()
     {
-        ControllPeace();
-
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            CreateNewTetromino();
-        }
+        ControllPeace();       
     }
+
+    void ChangeScore(int newPoints)
+    {
+        Score += newPoints;
+        textScore.text = "Score: " + Score;
+        speedDificulty -= 0.05f;
+    }
+    void ChangeScore()
+    {
+        Score = 0;
+        textScore.text = "Score: " + Score;
+        speedDificulty = 1f;
+    }
+
 
     public void NewCycle()
     {
@@ -66,39 +96,117 @@ public class GameController : MonoBehaviour
         StartCoroutine(NewCycleStep("verify"));
     }
 
+    void StartNewCycle()
+    {
+        Debug.Log(IsGameOver());
+        if (IsGameOver())
+        {
+            StartCoroutine(GameOver());
+        }
+        else
+        {
+            CreateNewTetromino();
+        }
+    }
+
+    bool IsGameOver()
+    {
+        RaycastHit hit;
+        if (Physics.Raycast(transform.position, Vector3.down, out hit,  1))
+        {
+            if (hit.transform.gameObject.GetComponent<Peace>().IsTetrominoPart != true) {
+                return true;
+            }            
+        }
+        return false;
+        
+    }
+
     void CreateNewTetromino()
     {
         int newPeace = Random.Range(0, 6);
         tetrominoInControll = Instantiate(tetrominos[newPeace],transform.position, Quaternion.identity).GetComponent<Tetromino>();
+        tetrominoInControll.Speed = speedDificulty;
     }
 
     void ClearTetromino()
     {
-        tetrominoInControll = null;
+        tetrominoInControll = null;        
     }
 
     void VerifyLines()
     {
+        int numLineComplete = 0;
         linesToClean.Clear();
         for (int i = stageBottomY; i < transform.position.y; i++)
-        {
-            
+        {            
             Ray ray = new Ray(new Vector3(stageStartX, i, 0f), Vector3.right);
             RaycastHit[] peacesList = Physics.RaycastAll(ray,50f,11);          
             
 
             if (peacesList.Length == lineLenght)
             {
+                ChangeScore(pointInLine);
+                numLineComplete++;
                 linesToClean.Add(i);
-                StartCoroutine(CleaLine(peacesList, i));
+                StartCoroutine(CleanLine(peacesList, i));
             }
-
         }
-        
+
+        if (numLineComplete==0)
+        {
+            StartCoroutine(NewCycleStep("create"));
+        }
     }
 
-   
-    IEnumerator CleaLine(RaycastHit[] raycastHits, int line)
+    
+
+
+    void ControllPeace()
+    {
+        inputTime += Time.deltaTime;
+
+        if (inputTime > delayInputTime && tetrominoInControll != null)
+        {
+
+            if (Input.GetKey(KeyCode.LeftArrow))
+            {
+                inputTime = 0f;
+                tetrominoInControll.Controlls("left");
+            }
+
+            if (Input.GetKey(KeyCode.RightArrow))
+            {
+                inputTime = 0f;
+                tetrominoInControll.Controlls("right");
+            }
+
+            if (Input.GetKey(KeyCode.UpArrow))
+            {
+                inputTime = 0f;
+                tetrominoInControll.Controlls("rotate");
+            }
+
+            if (Input.GetKey(KeyCode.DownArrow) && tetrominoInControll.IsMoving)
+            {
+                inputTime = 0f;
+                tetrominoInControll.Controlls("down");
+            }
+        }
+
+
+    }
+
+    IEnumerator GameOver()
+    {
+        yield return new WaitForSeconds(0.5f);
+        musicTheme.Stop();
+        yield return new WaitForSeconds(1.1f);
+        SceneManager.LoadScene("GameOver");
+    }
+
+
+    IEnumerator CleanLine(RaycastHit[] raycastHits, int line)
     {        
         Debug.Log("Clear Line " + line);
         yield return new WaitForSeconds(0.1f);
@@ -122,7 +230,7 @@ public class GameController : MonoBehaviour
             Ray ray = new Ray(new Vector3(stageStartX, i, 0f), Vector3.right);
             RaycastHit[] peacesList = Physics.RaycastAll(ray, 50f, 11);
 
-            Debug.Log("Down line " + i + " with " + peacesList.Length + " elements");
+           
             foreach (RaycastHit item in peacesList)
             {
                 item.transform.gameObject.GetComponent<Peace>().Movement(1, "down");
@@ -130,7 +238,6 @@ public class GameController : MonoBehaviour
         }
         
         linesToClean.RemoveAt(linesToClean.Count - 1);
-        Debug.Log(linesToClean.Count + " xxxxxxxxxxxxxxxxx");
         if (linesToClean.Count>0)
         {
             yield return new WaitForSeconds(0.1f);
@@ -139,27 +246,9 @@ public class GameController : MonoBehaviour
         else
         {
             StartCoroutine(NewCycleStep("create"));
-        }
-
-        
+        }        
     }
-
-
-    IEnumerator OrganizeLine(int line)
-    {
-        yield return new WaitForSeconds(0.1f);
-        Ray ray = new Ray(new Vector3(stageStartX, line, 0f), Vector3.right);
-        RaycastHit[] peacesList = Physics.RaycastAll(ray, 50f, 11);
-
-        if (peacesList.Length == 0)
-        {
-
-        }
-
-    }
-
-
-
+    
 
 
     IEnumerator NewCycleStep(string step)
@@ -176,9 +265,8 @@ public class GameController : MonoBehaviour
                 break;
 
 
-
             case "create":
-                CreateNewTetromino();
+                StartNewCycle();
                 break;
 
             default:
@@ -197,39 +285,6 @@ public class GameController : MonoBehaviour
 
 
 
-    void ControllPeace()
-    {
-        inputTime += Time.deltaTime;
-
-        if (inputTime> delayInputTime && tetrominoInControll != null)
-        {
-            
-            if (Input.GetKey(KeyCode.LeftArrow))
-            {
-                inputTime = 0f;
-                tetrominoInControll.Controlls("left");
-            }
-
-            if (Input.GetKey(KeyCode.RightArrow))
-            {
-                inputTime = 0f;
-                tetrominoInControll.Controlls("right");
-            }
-
-            if (Input.GetKey(KeyCode.UpArrow))
-            {
-                inputTime = 0f;
-                tetrominoInControll.Controlls("rotate");
-            }
-
-            if (Input.GetKey(KeyCode.DownArrow))
-            {
-                inputTime = 0f;
-                tetrominoInControll.Controlls("down");
-            }
-        }
-
-        
-    }
+    
 
 }
